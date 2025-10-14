@@ -5,7 +5,7 @@ from pydantic import field_validator
 class Settings(BaseSettings):
     ENVIRONMENT: str
     APP_NAME: str
-    GOOGLE_API_KEY: str
+    GOOGLE_API_KEY: str = ""
 
     @field_validator("ENVIRONMENT")
     @classmethod
@@ -24,6 +24,4 @@ class Settings(BaseSettings):
     @field_validator("GOOGLE_API_KEY")
     @classmethod
     def validate_google_api_key(cls, value):
-        if not value:
-            raise ValueError("GOOGLE_API_KEY must be set")
         return value
