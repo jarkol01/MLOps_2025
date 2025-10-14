@@ -1,26 +1,16 @@
 from fastapi import FastAPI
-import numpy as np
 
-from api.models.iris import PredictRequest, PredictResponse
-from inference import load_model, predict
+from api.models.schema import PredictRequest, PredictResponse
+from inference import load_sentence_transformer, load_classifier, predict
 
 
 app = FastAPI()
-model = load_model()
 
-
-@app.get("/")
-def welcome_root():
-    return {"message": "Welcome to the ML API"}
-
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
+sentence_model = load_sentence_transformer()
+classifier = load_classifier()
 
 
 @app.post("/predict")
 def predict_endpoint(request: PredictRequest) -> PredictResponse:
-    data = np.array(list(request.model_dump().values())).reshape(1, -1)
-    prediction = predict(model, data)
-    return PredictResponse(prediction=prediction)
+    prediction = predict(sentence_model, classifier, request.text)
+    return PredictResponse(prediction=str(prediction))

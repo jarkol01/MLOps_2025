@@ -1,1 +1,1 @@
-# MLOps_2025 by Jarosław Kołdun
+# Laboratory 1 homework 

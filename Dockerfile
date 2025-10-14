@@ -1,35 +1,32 @@
-# Dockerfile
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
-# Use a minimal Python image as the base
-FROM python:3.12-slim
+ENV UV_PYTHON_DOWNLOADS=0
 
-# Set the working directory in the container
+WORKDIR /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-dev
+COPY . /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev
+
+
+    
+FROM python:3.12-slim-bookworm
+
+RUN groupadd --system --gid 999 nonroot \
+ && useradd --system --gid 999 --uid 999 --create-home nonroot
+
+COPY --from=builder --chown=nonroot:nonroot /app /app
+
+ENV PATH="/app/.venv/bin:$PATH"
+
+USER nonroot
+
 WORKDIR /app
 
-# Install required system dependencies
-RUN apt-get update && apt-get install -y \
-    curl libsnappy-dev make gcc g++ libc6-dev libffi-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install uv package manager
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    export PATH="/root/.local/bin:$PATH"
-
-# Add uv to PATH
-ENV PATH="/root/.local/bin:$PATH"
-
-# Copy only dependency files first (to leverage caching)
-COPY pyproject.toml uv.lock ./
-
-# Install project dependencies using uv
-ENV UV_PROJECT_ENVIRONMENT=/usr/local
-RUN uv sync
-
-# Copy the rest of the application code
 COPY . . 
 
-# Expose the application port
-EXPOSE 8000
-
-# Run the application with uv
-CMD ["uv", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
