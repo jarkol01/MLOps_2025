@@ -1,1 +1,1 @@
-# MLOps_2025
+# MLOps_2025 by Jarosław Kołdun
